@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
+    
+    <style>
+        body{
+            background-color: whitesmoke;    
+        }
+
+        :root {
+            --accent-color: black;
+        }
+
+        svg {
+            background-color: white;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        path.line {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 1px;
+        }
+
+        .annotation path {
+            stroke: var(--accent-color);
+            fill: none;
+        }
+
+        .annotation path.connector-arrow,
+        .title text, .annotation text,
+        .annotation.callout.circle .annotation-subject path {
+            fill: var(--accent-color)
+        }
+
+        .annotation-note-bg {
+            fill: rgba(255, 255, 255, 0);
+        }
+
+        .annotation-note-title {
+            font-weight: bold;
+        }
+
+        .annotation.xythreshold {
+            cursor: move;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        text.hover {
+            font-size: .7em;
+        }
+
+        text.title {
+            font-size: 1.1em;
+        }
+
+        text.title {
+            font-size: 16px;
+
+        }
+
+        .overlay {
+            fill: none;
+            pointer-events: all;
+        }
+
+        .focus circle {
+            fill: steelblue;
+        }
+
+        .tooltip {
+            width: 94px;
+            padding: 4px 10px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: absolute;
+            background-color: white;
+            font-size: 14px;
+            font-family: 'Roboto', sans-serif;
+            pointer-events: none;
+            -webkit-transition: all 0.25s;
+            -moz-transition: all 0.25s;
+            -ms-transition: all 0.25s;
+            -o-transition: all 0.25s;
+            transition: all 0.25s;
+        }
+
+        .tooltip div {
+            margin: 3px 0;
+        }
+
+        .tooltip-date, .tooltip-cases {
+            font-weight: bold;
+            font-family: 'Roboto', sans-serif;   
+        }
+
+    </style>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+</head>
+<body>
+    <div id="viz"></div>
+        <script src="lineChart.js"></script>
+        <script src="barChart.js"></script>
+        <script>
+            function clearCanvas() {
+                d3.select("#viz").selectAll('*').remove();
+            }
+
+            // Dimensions and margins of graph
+            const usDataURL = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/rolling-averages/us.csv";
+            const stateDataURL = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/rolling-averages/us-states.csv";
+            
+            // General chart config
+            const width = 800;
+            const height = 500;
+
+            // Date parser
+            const parseTime = d3.timeParse("%Y-%m-%d");
+
+            // General chart config 
+            const chartConfig = {
+                width: width,
+                height: height,
+                parseTime: parseTime,
+                title: null,
+                state: 0
+            }
+
+            // Line chart config
+            let lineChartTitle = "Examining the Peaks of the COVID-19 Pandemic";
+            const lineChartConfig = {...chartConfig};
+            lineChartConfig.title = lineChartTitle;
+            lineChartConfig.isGuided = true;  // config option specific to line
+
+            // Bar chart config
+            const dates = [
+                parseTime("2021-01-11"),
+                parseTime("2021-08-31"),
+                parseTime("2022-01-14")]
+            const barChartTitles = [
+                "Title1",
+                "Title2",
+                "Title3"
+            ]
+            const barChartConfig = {...chartConfig};
+            barChartConfig.title = barChartTitles[barChartConfig.state];
+            
+            // lineChart(usDataURL, width, height, parseTime, lineChartTitle, true);
+            lineChart(usDataURL, lineChartConfig);
+            
+            const viz = d3.select("#viz");
+            viz.on("click", function() {
+                clearCanvas();
+                barChart(stateDataURL, dates[0], barChartTitles[0], width, height, parseTime);
+            });
+
+
+        </script>
+</body>
+</html>
