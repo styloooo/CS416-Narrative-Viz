@@ -510,6 +510,8 @@
                         g.append("g")
                             .call(d3.axisLeft(y));
                 
+                        // @TODO: Get a working tooltip
+
                         // Bars
                         g.selectAll("bar")
                             .data(filteredData)
@@ -536,7 +538,7 @@
                                 .duration(1000)
                                 .attr("y", function(d) {return y(d.cases_avg_per_100k); })
                                 .attr("height", function(d) { return height - y(d.cases_avg_per_100k); })
-                    })
+                    }) // end CSV callback 
                 
                     svg.append("text")
                     .attr("class", "title")
