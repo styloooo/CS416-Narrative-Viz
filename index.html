@@ -413,15 +413,8 @@
                     .attr("y", margin.top / 2)
                     .attr("text-anchor", "middle")
                     .text(chartConfig.title)
-                
-                    let subhead = "";
-                    if (chartConfig.isGuided) {
-                        //The average number of new cases reported over the most recent seven days of data. In other words, the seven-day trailing average.
-                        subhead = "Click anywhere to advance the timeline. ";
-                    } else {
-                    }
 
-                    subhead += "Shown here is the seven-day trailing average of newly reported COVID-19 cases per 100,000 people nationwide."
+                    let subhead = "Shown here is the seven-day trailing average of newly reported COVID-19 cases per 100,000 people nationwide."
                     
                     // Add subhead 
                     svg.append("text")
@@ -440,7 +433,7 @@
 
                     let instructionText = "Click anywhere to advance the timeline.";
                     if (!chartConfig.isGuided) {
-                        instructionText = "Click anywhere on the line to see a disaggregation of each state's average newly reported cases for that date."
+                        instructionText = "Click anywhere on the line to see a disaggregation of each state's reported cases for that date."
                     }
                     svg.append("text")
                     .attr("class", "subhead")
