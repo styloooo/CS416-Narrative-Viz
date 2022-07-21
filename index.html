@@ -5,6 +5,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
+
+    <title>Examining the Peaks of the COVID-19 Pandemic</title> 
     
     <style>
         body{
@@ -146,8 +148,9 @@
                 // Date parser and formatter
                 const parseTime = d3.timeParse("%Y-%m-%d");
                 const formatTime = d3.timeFormat("%B %d, %Y");
+                const formatTimeShort = d3.timeFormat("%b %d, %Y")
 
-                // General chart config 
+                // General chart confg 
                 const chartConfig = {
                     width: width,
                     height: height,
@@ -195,7 +198,7 @@
                     const bisectDate = d3.bisector(function(d) { return d.date; }).left;
                     const state = chartConfig.state;
                 
-                    const margin = {top: 55, right: 30, bottom: 35, left: 50},
+                    const margin = {top: 70, right: 30, bottom: 35, left: 50},
                         width = chartConfig.width - margin.right - margin.left,
                         height = chartConfig.height - margin.top - margin.bottom;
                 
@@ -305,14 +308,12 @@
                             labels[chartConfig.state].className = 'open-tooltip';
                             labels.map(l => {
                                 l.note = Object.assign({}, l.note, {
-                                    title : l.data.date,
+                                    title : formatTimeShort(parseTime(l.data.date)),
                                     label: `Average of ${l.data.cases_avg_per_100k} cases per 100,000 people`})
                                     l.subject = { radius: Math.log(l.data.cases_avg_per_100k + 1) }
                                 
                                 return l
                             })
-                
-                            const timeFormat = d3.timeFormat("%Y-%m-%d")
                 
                             window.makeAnnotations = d3.annotation()
                                 .annotations(labels)
@@ -321,7 +322,7 @@
                                     y: d => y(d.cases_avg_per_100k)
                                 })
                                 .accessorsInverse({
-                                    date: d => timeFormat(x.invert(d.x)),
+                                    date: d => formatTime(x.invert(d.x)),
                                     cases_avg_per_100k: d => y.invert(d.y)
                                 })
                                 // .on('subjectover', function(annotation) {
@@ -390,12 +391,12 @@
                                         return value;
                                     });
                                     tooltip.attr("style", `left:${x(d.date) + 64}px; top:${y(d.value)}px;`);
-                                    tooltip.select(".tooltip-date").text(parseTime(d.date));
+                                    tooltip.select(".tooltip-date").text(formatTimeShort(d.date));
                                     tooltip.select(".tooltip-cases").text(d.value);
                 
                                 }).on("click", function(event){
                                     let d = getDataRowFromMouseCoords(event);
-                                    console.log(d);
+                                    // console.log(d);
                                     let config = {...barChartConfig}
                                     config.date = d.date;
                                     config.isGuided = false;
@@ -418,11 +419,9 @@
                         //The average number of new cases reported over the most recent seven days of data. In other words, the seven-day trailing average.
                         subhead = "Click anywhere to advance the timeline. ";
                     } else {
-                        subhead = "Mouse over the chart for details and click to see a bar chart of cases by state for a given date. ";
                     }
 
                     subhead += "Shown here is the seven-day trailing average of newly reported COVID-19 cases per 100,000 people nationwide."
-                    // @TODO: adjust line
                     
                     // Add subhead 
                     svg.append("text")
@@ -439,11 +438,21 @@
                     .attr("y", height + margin.bottom + margin.top - 5)
                     .text("Source: NYTimes")
 
+                    let instructionText = "Click anywhere to advance the timeline.";
+                    if (!chartConfig.isGuided) {
+                        instructionText = "Click anywhere on the line to see a disaggregation of each state's average newly reported cases for that date."
+                    }
+                    svg.append("text")
+                    .attr("class", "subhead")
+                    .attr("x", (width / 2) + 30)
+                    .attr("y", (margin.top / 2) + 30)
+                    .attr("text-anchor", "middle")
+                    .text(instructionText);
+
                 } // end lineChart(...)
             
                 function barChart(dataURL, chartConfig) {
-                    // @TODO: Add better subhead text like above
-                    const margin = {top: 50, right: 30, bottom: 80, left: 50},
+                    const margin = {top: 50, right: 30, bottom: 90, left: 50},
                     width = chartConfig.width - margin.right - margin.left,
                     height = chartConfig.height - margin.top - margin.bottom;
                     
@@ -531,21 +540,18 @@
                 
                     svg.append("text")
                     .attr("class", "title")
-                    .attr("x", width / 2)
+                    .attr("x", (width / 2) + 30)
                     .attr("y", margin.top / 2)
                     .attr("text-anchor", "middle")
                     .text(chartConfig.title);
                 
 
-                    let subheadText = "Bars are sorted by value.";
-                    if (chartConfig.isGuided == false) {
-                        subheadText += " Click anywhere to return to the line chart.";
-                    }
+                    let subheadText = "Shown here is the 7-day trailing average of new COVID-19 cases by state on a given date, sorted by value.";
 
                     // add subhead 
                     svg.append("text")
                     .attr("class", "subhead")
-                    .attr("x", width / 2)
+                    .attr("x", (width / 2) + 30)
                     .attr("y", (margin.top / 2) + 15)
                     .attr("text-anchor", "middle")
                     .text(subheadText);
@@ -557,7 +563,9 @@
                     .attr("y", height + margin.bottom + margin.top - 5)
                     .text("Source: NYTimes")
 
+                    let instructionText = "Click anywhere to advance the timeline.";
                     if (!chartConfig.isGuided) {
+                        instructionText = "Click anywhere to return to the overview.";
                         svg.on("click", function() {
                             console.log("foo");
                             let config = {...lineChartConfig};
@@ -565,8 +573,14 @@
                             config.state = 2;
                             clearCanvas();
                             lineChart(usDataURL, config);
-                        });
+                    });
                     }
+                    svg.append("text")
+                    .attr("class", "subhead")
+                    .attr("x", (width / 2) + 30)
+                    .attr("y", (margin.top / 2) + 30)
+                    .attr("text-anchor", "middle")
+                    .text(instructionText);
                 } // end lineChart(...)
 
                 // Controls flow of narrative visualization
