@@ -198,7 +198,7 @@
                     const bisectDate = d3.bisector(function(d) { return d.date; }).left;
                     const state = chartConfig.state;
                 
-                    const margin = {top: 70, right: 30, bottom: 35, left: 50},
+                    const margin = {top: 75, right: 30, bottom: 35, left: 50},
                         width = chartConfig.width - margin.right - margin.left,
                         height = chartConfig.height - margin.top - margin.bottom;
                 
@@ -352,7 +352,7 @@
                     
                             // Mouseover tooltip example adapted
                             // from https://bl.ocks.org/Qizly/5a78caaf03ed96757e72
-                            const focus = svg.append("g")
+                            const focus = g.append("g")
                                 .attr("class", "focus")
                                 .style("display", "none");
                 
@@ -374,7 +374,7 @@
                                 .attr("class", "overlay")
                                 .attr("width", width)
                                 .attr("height", height)
-                                .attr("transform", `translate(${margin.left},${margin.top})`)
+                                // .attr("transform", `translate(${margin.left},${margin.top})`)
                                 .on("mouseover", function() {
                                     focus.style("display", null);
                                     tooltip.style("display", null); 
@@ -384,12 +384,12 @@
                                 }).on("mousemove", function(event){
                                     let d = getDataRowFromMouseCoords(event);
                                     // console.log(d);
-                                    focus.attr("transform", `translate(${margin.left + x(d.date)},${margin.top + y(d.value)})`);
+                                    focus.attr("transform", `translate(${x(d.date)},${y(d.value)})`);
                                     focus.select("circle").attr("r", function() {
                                         let value = 0;
                                         if (d.value != null && d.value > 0) value = Math.log(d.value + 1);
                                         return value;
-                                    });
+                                    })
                                     tooltip.attr("style", `left:${x(d.date) + 64}px; top:${y(d.value)}px;`);
                                     tooltip.select(".tooltip-date").text(formatTimeShort(d.date));
                                     tooltip.select(".tooltip-cases").text(d.value);
@@ -452,7 +452,7 @@
                 } // end lineChart(...)
             
                 function barChart(dataURL, chartConfig) {
-                    const margin = {top: 50, right: 30, bottom: 90, left: 50},
+                    const margin = {top: 75, right: 30, bottom: 90, left: 50},
                     width = chartConfig.width - margin.right - margin.left,
                     height = chartConfig.height - margin.top - margin.bottom;
                     
