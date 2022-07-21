@@ -191,10 +191,6 @@
                         width = chartConfig.width - margin.right - margin.left,
                         height = chartConfig.height - margin.top - margin.bottom;
                 
-                    // function tooltipLabelMaker (date, value) {
-                    //     return `On average there were ${value} average cases per 100,000 on ${date}.`
-                    // }
-                
                     // Append SVG object to body of the page
                     const svg = d3.select("#viz")
                         .append("svg")
@@ -218,8 +214,6 @@
                     // Use the dataset
                     function(data) {
                         // X Axis (Date)
-                        // console.log(data);
-                
                         const x = d3.scaleTime()
                             .domain(d3.extent(data, function(d) { return d.date; }))
                             .range([ 0, width ]);
@@ -379,12 +373,6 @@
                                     focus.style("display", "none");
                                     tooltip.style("display", "none");
                                 }).on("mousemove", function(event){
-                                    // console.log(d3.pointer(event));
-                                    // let x0 = x.invert(d3.pointer(event)[0]),
-                                    //     i = bisectDate(data, x0, 1),
-                                    //     d0 = data[i - 1],
-                                    //     d1 = data[i],
-                                    //     d = x0 - d0.date > d1.date - x0 ? d1 : d0;
                                     let d = getDataRowFromMouseCoords(event);
                                     // console.log(d);
                                     focus.attr("transform", `translate(${margin.left + x(d.date)},${margin.top + y(d.value)})`);
@@ -468,16 +456,9 @@
                                 && rowDate.getDate() == date.getDate();
                         })
                 
-                        // console.log(filteredData);
-                        // console.log(filteredData.length);
-                
                         filteredData.sort(function(a, b) {
                             return d3.descending(parseFloat(a.cases_avg_per_100k), parseFloat(b.cases_avg_per_100k))
                         })
-                
-                        // filteredData.sort(function(a, b) {
-                        //     return d3.ascending(a.state, b.state)
-                        // })
                 
                         // X Axis
                         const x = d3.scaleBand()
@@ -556,9 +537,9 @@
                             lineChart(usDataURL, config);
                         });
                     }
-                }
-                
-                // lineChart(usDataURL, width, height, parseTime, lineChartTitle, true);
+                } // end lineChart(...)
+
+                // Controls flow of narrative visualization
                 // Render initial line chart with first annotation
                 lineChart(usDataURL, lineChartConfig);
                 
@@ -595,10 +576,7 @@
                                         clearCanvas();
                                         lineChartConfig.isGuided = false;
                                         lineChart(usDataURL, lineChartConfig);
-                                        viz.on("click", function(){});
-                                        // @TODO: Have lineChart return coords that are clicked
-                                        // when isGuided = false
-                                        // @TODO: Figure out how to switch back and forth between charts without being explicit
+                                        viz.on("click", function(){}); // let charts handle it
                                     });
                                 });
                             });
