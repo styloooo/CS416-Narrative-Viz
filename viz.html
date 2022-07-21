@@ -22,7 +22,8 @@
 
         path.line {
             fill: none;
-            stroke: steelblue;
+            /* stroke: steelblue; */
+            stroke: lightsteelblue;
             stroke-width: 1px;
         }
 
@@ -64,6 +65,15 @@
         text.title {
             font-size: 16px;
 
+        }
+
+        text.subhead {
+            font-size: 10px;
+
+        }
+
+        text.subhead {
+            font-size: .7em;
         }
 
         .overlay {
@@ -109,61 +119,500 @@
 </head>
 <body>
     <div id="viz"></div>
-        <script src="lineChart.js"></script>
-        <script src="barChart.js"></script>
+    <button id="restart" onclick="restartViz()">Restart Visualization</button>
         <script>
             function clearCanvas() {
                 d3.select("#viz").selectAll('*').remove();
             }
 
-            // Dimensions and margins of graph
-            const usDataURL = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/rolling-averages/us.csv";
-            const stateDataURL = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/rolling-averages/us-states.csv";
+            function viz() {
+
+                // Dimensions and margins of graph
+                const usDataURL = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/rolling-averages/us.csv";
+                const stateDataURL = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/rolling-averages/us-states.csv";
+                
+                // General chart config
+                const width = 800;
+                const height = 500;
+
+                // Date parser and formatter
+                const parseTime = d3.timeParse("%Y-%m-%d");
+                const formatTime = d3.timeFormat("%B %d, %Y");
+
+                // General chart config 
+                const chartConfig = {
+                    width: width,
+                    height: height,
+                    parseTime: parseTime,
+                    title: null,
+                    state: 0,
+                    isGuided: true,
+                }
+
+                // Line chart config
+                let lineChartTitle = "Examining the Peaks of the COVID-19 Pandemic";
+                var lineChartConfig = {...chartConfig};
+                lineChartConfig.title = lineChartTitle;
+
+                function generateBarChartTitle(date) {
+                    return `COVID-19 Cases per 100,000 people by State on ${formatTime(date)}`;
+                }
+
+                // Bar chart config
+                const dates = [
+                    parseTime("2021-01-11"),
+                    parseTime("2021-08-31"),
+                    parseTime("2022-01-14")];
+                const barChartTitles = [
+                ];
+
+                for (let i = 0; i < dates.length; i++) {
+                    barChartTitles.push(generateBarChartTitle(dates[i]));
+                }
+
+                var barChartConfig = {...chartConfig};
+                barChartConfig.title = barChartTitles[barChartConfig.state];
+                barChartConfig.date = dates[barChartConfig.state]; // config option specific to bar 
+
+                function lineChart(dataURL, chartConfig) {
+                    // const chartConfig = {
+                    //     width: width,
+                    //     height: height,
+                    //     parseTime: parseTime,
+                    //     title: null,
+                    //     state: 0
+                    //     isGuided: true/false,
+                    // }
+                    const parseTime = chartConfig.parseTime;
+                    const bisectDate = d3.bisector(function(d) { return d.date; }).left;
+                    const state = chartConfig.state;
+                
+                    const margin = {top: 50, right: 30, bottom: 30, left: 50},
+                        width = chartConfig.width - margin.right - margin.left,
+                        height = chartConfig.height - margin.top - margin.bottom;
+                
+                    // function tooltipLabelMaker (date, value) {
+                    //     return `On average there were ${value} average cases per 100,000 on ${date}.`
+                    // }
+                
+                    // Append SVG object to body of the page
+                    const svg = d3.select("#viz")
+                        .append("svg")
+                            .attr("width", width + margin.left + margin.right)
+                            .attr("height", height + margin.top + margin.bottom)
+                    const g = svg.append("g")
+                            .attr("transform", `translate(${margin.left},${margin.top})`);
+                
+                    const tooltip = d3.select("#viz").append("div")
+                        .attr("class", "tooltip")
+                        .style("display", "none");
+                
+                    // Read data
+                    d3.csv(dataURL,
+                
+                    // Format variables
+                    function(d){
+                        return { date: parseTime(d.date), value : parseFloat(d.cases_avg_per_100k) }
+                    }).then(
+                
+                    // Use the dataset
+                    function(data) {
+                        // X Axis (Date)
+                        // console.log(data);
+                
+                        const x = d3.scaleTime()
+                            .domain(d3.extent(data, function(d) { return d.date; }))
+                            .range([ 0, width ]);
+                        g.append("g")
+                            .attr("transform", `translate(0, ${height})`)
+                            .call(d3.axisBottom(x));
+                
+                        // Y Axis
+                        const y = d3.scaleLinear()
+                            .domain([0, d3.max(data, function(d) { return +d.value; })])
+                            .range([ height, 0 ]);
+                        g.append("g")
+                            .call(d3.axisLeft(y));
+                
+                        // Chart animation adapted from: 
+                        // https://bl.ocks.org/shimizu/f7ef798894427a99efe5e173e003260d
+                        const t = d3.transition()
+                        .duration(1500)
+                        .ease(d3.easeLinear);
+                
+                        const lineGen = d3.line()
+                        .x(function(d) { return x(d.date) })
+                        .y(function(d) { return y(d.value) });
+                
+                        // Line path
+                        const line = g.selectAll(".line");
+                
+                        g.append("path")
+                            .datum(data)
+                            // .attr("fill", "none")
+                            // .attr("stroke", "steelblue")
+                            // .attr("stroke-width", 1.5)
+                            // .attr("class", "line")
+                            // .attr("d", d3.line()
+                            //     .x(function(d) { return x(d.date) })
+                            //     .y(function(d) { return y(d.value) })
+                            // );
+                            .classed("line", true)
+                            .merge(line)
+                            .attr("d", lineGen)
+                            .attr("fill", "none")
+                            .attr("stroke", "black")
+                            .attr("stroke-dasharray", function(d){ return this.getTotalLength(); })
+                            .attr("stroke-dashoffset", function(d){ return this.getTotalLength(); })
+                        
+                        g.selectAll(".line").transition(t)
+                            .attr("stroke-dashoffset", 0)
+                
+                        // Guided annotations
+                        if (chartConfig.isGuided === true) {
+                            // @TODO: Delay annotations 
+                            const labels = [
+                                {
+                                    data: {
+                                        date: '2021-01-11',
+                                        cases_avg_per_100k: 75.52
+                                    },
+                                    dy: -50,
+                                    dx: 25,
+                                    className: "hidden",
+                                },
+                                {
+                                    data: {
+                                        date: '2021-08-31',
+                                        cases_avg_per_100k: 48.79
+                                    },
+                                    dy: -75,
+                                    dx: -120,
+                                    "className": "hidden",
+                                },
+                                {
+                                    data: {
+                                        date: '2022-01-14',
+                                        cases_avg_per_100k: 243.15
+                                    },
+                                    dy: 37,
+                                    dx: -142,
+                                    className: "hidden",
+                                }
+                            ];
+                            labels[chartConfig.state].className = 'open-tooltip';
+                            labels.map(l => {
+                                l.note = Object.assign({}, l.note, {
+                                    title : l.data.date,
+                                    label: `Average of ${l.data.cases_avg_per_100k} cases per 100,000 people`})
+                                    l.subject = { radius: Math.log(l.data.cases_avg_per_100k) }
+                                
+                                return l
+                            })
+                
+                            const timeFormat = d3.timeFormat("%Y-%m-%d")
+                
+                            window.makeAnnotations = d3.annotation()
+                                .annotations(labels)
+                                .type(d3.annotationCalloutCircle)
+                                .accessors({ x: d => x(parseTime(d.date)),
+                                    y: d => y(d.cases_avg_per_100k)
+                                })
+                                .accessorsInverse({
+                                    date: d => timeFormat(x.invert(d.x)),
+                                    cases_avg_per_100k: d => y.invert(d.y)
+                                })
+                                .on('subjectover', function(annotation) {
+                                    annotation.type.a.selectAll("g.annotation-connector, g.annotation-note")
+                                        .classed("hidden", false)
+                                })
+                                .on('subjectout', function(annotation) {
+                                    annotation.type.a.selectAll("g.annotation-connector, g.annotation-note")
+                                        .classed("hidden", true)
+                                })
+                
+                                g.append("g")
+                                    .attr("class", "annotation-test")
+                                    .call(makeAnnotations)
+                
+                                g.selectAll("g.annotation-connector, g.annotation-note")
+                                    .classed("hidden", true)
+                        } else { // explore mode (free moving tooltip)
+                            function getDataRowFromMouseCoords(event) {
+                                let x0 = x.invert(d3.pointer(event)[0]),
+                                i = bisectDate(data, x0, 1),
+                                d0 = data[i - 1],
+                                d1 = data[i],
+                                d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+                                return d;
+                            }
+                    
+                            // Mouseover tooltip example adapted
+                            // from https://bl.ocks.org/Qizly/5a78caaf03ed96757e72
+                            const focus = svg.append("g")
+                                .attr("class", "focus")
+                                .style("display", "none");
+                
+                            focus.append("circle")
+                                .attr("r", 2);
+                
+                            const tooltipDate = tooltip.append("div")
+                                .attr("class", "tooltip-date");
+                
+                            const tooltipCases = tooltip.append("div");
+                            tooltipCases.append("span")
+                                .attr("class", "tooltip-title")
+                                .text("Cases: ");
+                
+                            const tooltipCasesValue = tooltipCases.append("span")
+                                .attr("class", "tooltip-cases");
+                
+                            g.append("rect")
+                                .attr("class", "overlay")
+                                .attr("width", width)
+                                .attr("height", height)
+                                .attr("transform", `translate(${margin.left},${margin.top})`)
+                                .on("mouseover", function() {
+                                    focus.style("display", null);
+                                    tooltip.style("display", null); 
+                                }).on("mouseout", function() {
+                                    focus.style("display", "none");
+                                    tooltip.style("display", "none");
+                                }).on("mousemove", function(event){
+                                    // console.log(d3.pointer(event));
+                                    // let x0 = x.invert(d3.pointer(event)[0]),
+                                    //     i = bisectDate(data, x0, 1),
+                                    //     d0 = data[i - 1],
+                                    //     d1 = data[i],
+                                    //     d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+                                    let d = getDataRowFromMouseCoords(event);
+                                    // console.log(d);
+                                    focus.attr("transform", `translate(${margin.left + x(d.date)},${margin.top + y(d.value)})`);
+                                    focus.select("circle").attr("r", function() {
+                                        let value = 0;
+                                        if (d.value != null && d.value > 0) value = Math.log(d.value);
+                                        return value;
+                                    });
+                                    tooltip.attr("style", `left:${x(d.date) + 64}px; top:${y(d.value)}px;`);
+                                    tooltip.select(".tooltip-date").text(parseTime(d.date));
+                                    tooltip.select(".tooltip-cases").text(d.value);
+                
+                                }).on("click", function(event){
+                                    let d = getDataRowFromMouseCoords(event);
+                                    console.log(d);
+                                    let config = {...barChartConfig}
+                                    config.date = d.date;
+                                    config.isGuided = false;
+                                    config.title = generateBarChartTitle(d.date);
+                                    clearCanvas();
+                                    barChart(stateDataURL, config);
+                                }); // end click callback
+                            } // end conditional        
+                    }); // end d3.csv callback
+                    // Title
+                    svg.append("text")
+                    .attr("class", "title")
+                    .attr("x", width / 2)
+                    .attr("y", margin.top / 2)
+                    .attr("text-anchor", "middle")
+                    .text(chartConfig.title)
+                
+                    let subhead = "";
+                    if (chartConfig.isGuided) {
+                        subhead = "Mouse over the circle for more information and click to advance the visualization";
+                    } else {
+                        subhead = "Mouse over the line for details and click to see a bar chart of cases by state for a given date."
+                    }
+                
+                    svg.append("text")
+                    .attr("class", "subhead")
+                    .attr("x", width / 2)
+                    .attr("y", (margin.top / 2) + 15)
+                    .attr("text-anchor", "middle")
+                    .text(subhead);
+                } // end lineChart(...)
             
-            // General chart config
-            const width = 800;
-            const height = 500;
+                function barChart(dataURL, chartConfig) {
+                    const margin = {top: 50, right: 30, bottom: 75, left: 50},
+                    width = chartConfig.width - margin.right - margin.left,
+                    height = chartConfig.height - margin.top - margin.bottom;
+                    
+                    const date = chartConfig.date;
+                    const parseTime = chartConfig.parseTime;
+                
+                    const svg = d3.select("#viz")
+                        .append("svg")
+                            .attr("width", width + margin.left + margin.right)
+                            .attr("height", height + margin.top + margin.bottom);
+                    
+                    const g = svg.append("g")
+                        .attr("transform", `translate(${margin.left},${margin.top})`);
+                
+                    d3.csv(dataURL).then(function (data) {
+                        let filteredData = data.filter(function(row) {
+                            const excludedGeoids = [
+                                'USA-60', // American Samoa 
+                                'USA-69', // Northern Mariana Islands 
+                                'USA-66', // Guam
+                                'USA-72', // Puerto Rico
+                                'USA-78'  // Virgin Islands
+                            ];
+                            for (let i = 0; i < excludedGeoids.length; i++) {
+                                if (row['geoid'] == excludedGeoids[i]) {
+                                    return false;
+                                }
+                            }
+                            rowDate = parseTime(row['date'])
+                            return rowDate.getFullYear() == date.getFullYear()
+                                && rowDate.getMonth() == date.getMonth()
+                                && rowDate.getDate() == date.getDate();
+                        })
+                
+                        // console.log(filteredData);
+                        // console.log(filteredData.length);
+                
+                        filteredData.sort(function(a, b) {
+                            return d3.descending(parseFloat(a.cases_avg_per_100k), parseFloat(b.cases_avg_per_100k))
+                        })
+                
+                        // filteredData.sort(function(a, b) {
+                        //     return d3.ascending(a.state, b.state)
+                        // })
+                
+                        // X Axis
+                        const x = d3.scaleBand()
+                            .range([ 0, width ])
+                            .domain(filteredData.map(function(d) { return d.state }))
+                            .padding(0.2);
+                        
+                        g.append("g")
+                            .attr("transform", `translate(0, ${height})`)
+                            .call(d3.axisBottom(x))
+                            .selectAll("text")
+                                .attr("transform", `translate(-10,0)rotate(-45)`)
+                                .style("text-anchor", "end");
+                
+                        const y = d3.scaleLinear()
+                            .domain([0, d3.max(filteredData, function(d) { return +d.cases_avg_per_100k; })])
+                            .range([ height, 0 ]);
+                        g.append("g")
+                            .call(d3.axisLeft(y));
+                
+                        // Bars
+                        g.selectAll("bar")
+                            .data(filteredData)
+                            .enter()
+                            .append("rect")
+                                .attr("class", "bar")
+                                .on("mouseover", function() {
+                                    d3.select(this)
+                                        .attr("fill", "steelblue")
+                                }).on("mouseout", function() {
+                                    d3.select(this)
+                                        .transition("colorfade")
+                                        .duration(250)
+                                        // .attr("fill", "#69b3a2")
+                                        .attr("fill", "lightsteelblue")
+                                }).attr("fill", "lightsteelblue")//"#69b3a2")
+                                .attr("x", function(d) {return x(d.state); })
+                                .attr("width", x.bandwidth())
+                                .attr("y", height)
+                                .transition("bars")
+                                .delay(function(d, i) {
+                                    return i * 50;
+                                })
+                                .duration(1000)
+                                .attr("y", function(d) {return y(d.cases_avg_per_100k); })
+                                .attr("height", function(d) { return height - y(d.cases_avg_per_100k); })
+                    })
+                
+                    svg.append("text")
+                    .attr("class", "title")
+                    .attr("x", width / 2)
+                    .attr("y", margin.top / 2)
+                    .attr("text-anchor", "middle")
+                    .text(chartConfig.title);
+                
 
-            // Date parser
-            const parseTime = d3.timeParse("%Y-%m-%d");
+                    let subheadText = "Bars are sorted by value.";
+                    if (chartConfig.isGuided == false) {
+                        subheadText += " Click to return to the line chart.";
+                    }
 
-            // General chart config 
-            const chartConfig = {
-                width: width,
-                height: height,
-                parseTime: parseTime,
-                title: null,
-                state: 0
+                    svg.append("text")
+                    .attr("class", "subhead")
+                    .attr("x", width / 2)
+                    .attr("y", (margin.top / 2) + 15)
+                    .attr("text-anchor", "middle")
+                    .text(subheadText);
+
+                    if (!chartConfig.isGuided) {
+                        svg.on("click", function() {
+                            console.log("foo");
+                            let config = {...lineChartConfig};
+                            config.isGuided = false;
+                            config.state = 2;
+                            clearCanvas();
+                            lineChart(usDataURL, config);
+                        });
+                    }
+                }
+                
+                // lineChart(usDataURL, width, height, parseTime, lineChartTitle, true);
+                // Render initial line chart with first annotation
+                lineChart(usDataURL, lineChartConfig);
+                
+                const viz = d3.select("#viz");
+                viz.on("click", function() {
+                    // Render initial bar chart
+                    clearCanvas();
+                    barChart(stateDataURL, barChartConfig);    
+                    viz.on("click", function() {
+                        // Render line chart with second annotation
+                        clearCanvas();
+                        lineChartConfig.state++;
+                        lineChart(usDataURL, lineChartConfig);
+                        viz.on("click", function() {
+                            // Render second bar chart
+                            clearCanvas();
+                            barChartConfig.state++;
+                            barChartConfig.title = barChartTitles[barChartConfig.state];
+                            barChartConfig.date = dates[barChartConfig.state];
+                            barChart(stateDataURL, barChartConfig);
+                            viz.on("click", function() {
+                                // Render line chart with third annotation
+                                clearCanvas();
+                                lineChartConfig.state++;
+                                lineChart(usDataURL, lineChartConfig);
+                                viz.on("click", function() {
+                                    // Render third bar chart
+                                    clearCanvas();
+                                    barChartConfig.state++;
+                                    barChartConfig.title = barChartTitles[barChartConfig.state];
+                                    barChart(stateDataURL, barChartConfig);
+                                    viz.on("click", function() {
+                                        // Render unguided line chart
+                                        clearCanvas();
+                                        lineChartConfig.isGuided = false;
+                                        lineChart(usDataURL, lineChartConfig);
+                                        viz.on("click", function(){});
+                                        // @TODO: Have lineChart return coords that are clicked
+                                        // when isGuided = false
+                                        // @TODO: Figure out how to switch back and forth between charts without being explicit
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
             }
 
-            // Line chart config
-            let lineChartTitle = "Examining the Peaks of the COVID-19 Pandemic";
-            const lineChartConfig = {...chartConfig};
-            lineChartConfig.title = lineChartTitle;
-            lineChartConfig.isGuided = true;  // config option specific to line
-
-            // Bar chart config
-            const dates = [
-                parseTime("2021-01-11"),
-                parseTime("2021-08-31"),
-                parseTime("2022-01-14")]
-            const barChartTitles = [
-                "Title1",
-                "Title2",
-                "Title3"
-            ]
-            const barChartConfig = {...chartConfig};
-            barChartConfig.title = barChartTitles[barChartConfig.state];
-            
-            // lineChart(usDataURL, width, height, parseTime, lineChartTitle, true);
-            lineChart(usDataURL, lineChartConfig);
-            
-            const viz = d3.select("#viz");
-            viz.on("click", function() {
+            function restartViz() {
                 clearCanvas();
-                barChart(stateDataURL, dates[0], barChartTitles[0], width, height, parseTime);
-            });
+                viz();
+            }
 
+            viz();
 
         </script>
 </body>
