@@ -116,6 +116,10 @@
             display: inline;
         }
 
+        .credit {
+            font-size: 9px;
+        }
+
     </style>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -191,7 +195,7 @@
                     const bisectDate = d3.bisector(function(d) { return d.date; }).left;
                     const state = chartConfig.state;
                 
-                    const margin = {top: 50, right: 30, bottom: 30, left: 50},
+                    const margin = {top: 55, right: 30, bottom: 35, left: 50},
                         width = chartConfig.width - margin.right - margin.left,
                         height = chartConfig.height - margin.top - margin.bottom;
                 
@@ -303,7 +307,7 @@
                                 l.note = Object.assign({}, l.note, {
                                     title : l.data.date,
                                     label: `Average of ${l.data.cases_avg_per_100k} cases per 100,000 people`})
-                                    l.subject = { radius: Math.log(l.data.cases_avg_per_100k) }
+                                    l.subject = { radius: Math.log(l.data.cases_avg_per_100k + 1) }
                                 
                                 return l
                             })
@@ -328,7 +332,7 @@
                                 //     annotation.type.a.selectAll("g.annotation-connector, g.annotation-note")
                                 //         .classed("hidden", true)
                                 // })
-                
+
                                 g.append("g")
                                     .attr("class", "annotation-test")
                                     .call(makeAnnotations)
@@ -404,28 +408,42 @@
                     // Title
                     svg.append("text")
                     .attr("class", "title")
-                    .attr("x", width / 2)
+                    .attr("x", (width / 2) + 30)
                     .attr("y", margin.top / 2)
                     .attr("text-anchor", "middle")
                     .text(chartConfig.title)
                 
                     let subhead = "";
                     if (chartConfig.isGuided) {
-                        subhead = "Mouse over the circle for more information and click to advance the visualization";
+                        //The average number of new cases reported over the most recent seven days of data. In other words, the seven-day trailing average.
+                        subhead = "Click anywhere to advance the timeline. ";
                     } else {
-                        subhead = "Mouse over the line for details and click to see a bar chart of cases by state for a given date."
+                        subhead = "Mouse over the chart for details and click to see a bar chart of cases by state for a given date. ";
                     }
-                
+
+                    subhead += "Shown here is the seven-day trailing average of newly reported COVID-19 cases per 100,000 people nationwide."
+                    // @TODO: adjust line
+                    
+                    // Add subhead 
                     svg.append("text")
                     .attr("class", "subhead")
-                    .attr("x", width / 2)
+                    .attr("x", (width / 2) + 30 )
                     .attr("y", (margin.top / 2) + 15)
                     .attr("text-anchor", "middle")
                     .text(subhead);
+
+                    // Add data source
+                    svg.append("text")
+                    .attr("class", "credit")
+                    .attr("x", 5)
+                    .attr("y", height + margin.bottom + margin.top - 5)
+                    .text("Source: NYTimes")
+
                 } // end lineChart(...)
             
                 function barChart(dataURL, chartConfig) {
-                    const margin = {top: 50, right: 30, bottom: 75, left: 50},
+                    // @TODO: Add better subhead text like above
+                    const margin = {top: 50, right: 30, bottom: 80, left: 50},
                     width = chartConfig.width - margin.right - margin.left,
                     height = chartConfig.height - margin.top - margin.bottom;
                     
@@ -521,15 +539,23 @@
 
                     let subheadText = "Bars are sorted by value.";
                     if (chartConfig.isGuided == false) {
-                        subheadText += " Click to return to the line chart.";
+                        subheadText += " Click anywhere to return to the line chart.";
                     }
 
+                    // add subhead 
                     svg.append("text")
                     .attr("class", "subhead")
                     .attr("x", width / 2)
                     .attr("y", (margin.top / 2) + 15)
                     .attr("text-anchor", "middle")
                     .text(subheadText);
+
+                    // add data source
+                    svg.append("text")
+                    .attr("class", "credit")
+                    .attr("x", 5)
+                    .attr("y", height + margin.bottom + margin.top - 5)
+                    .text("Source: NYTimes")
 
                     if (!chartConfig.isGuided) {
                         svg.on("click", function() {
