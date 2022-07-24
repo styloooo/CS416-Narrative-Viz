@@ -122,6 +122,11 @@
             font-size: 9px;
         }
 
+        .avgline {
+            stroke: grey;
+            stroke-dasharray: 5;
+        }
+
     </style>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -184,6 +189,7 @@
                 var barChartConfig = {...chartConfig};
                 barChartConfig.title = barChartTitles[barChartConfig.state];
                 barChartConfig.date = dates[barChartConfig.state]; // config option specific to bar 
+                barChartConfig.avg = 75.52;
 
                 function lineChart(dataURL, chartConfig) {
                     // const chartConfig = {
@@ -400,6 +406,7 @@
                                     let config = {...barChartConfig}
                                     config.date = d.date;
                                     config.isGuided = false;
+                                    config.avg = d.value;
                                     config.title = generateBarChartTitle(d.date);
                                     clearCanvas();
                                     barChart(stateDataURL, config);
@@ -502,8 +509,6 @@
                             .range([ height, 0 ]);
                         g.append("g")
                             .call(d3.axisLeft(y));
-                
-                        // @TODO: Get a working tooltip
 
                         // Bars
                         g.selectAll("bar")
@@ -531,6 +536,40 @@
                                 .duration(1000)
                                 .attr("y", function(d) {return y(d.cases_avg_per_100k); })
                                 .attr("height", function(d) { return height - y(d.cases_avg_per_100k); })
+
+                        
+                        if (chartConfig.avg) {
+                            // let dataSum = d3.sum(filteredData, function(d) { return d.cases_avg_per_100k; })
+
+                            g.append("line")
+                                .classed("avgline", true)
+                                .attr("x1", 0)
+                                .attr("y1", y(chartConfig.avg))
+                                .attr("x2", width)
+                                .attr("y2", y(chartConfig.avg));
+                        }
+
+                        // const line = g.selectAll(".line");
+
+                        // const lineGen = d3.line()
+                        //     .x(function(d) { return x(d.state) })
+                        //     .y(function() { return y(45.5) });
+
+                        // // g.append("path")
+                        // //         .datum(data)
+                        // //         .attr("class", "line")
+                        // //         .attr("d", lineGen)
+                        // //         .style("fill", "black");
+
+                        // g.append("path")
+                        //     .datum(data)
+                        //     .classed("line", true)
+                        //     .merge(line)
+                        //     .attr("d", lineGen)
+                        //     .attr("fill", "none")
+                        //     .attr("stroke", "black");
+
+                        
                     }) // end CSV callback 
                 
                     svg.append("text")
@@ -598,6 +637,7 @@
                             barChartConfig.state++;
                             barChartConfig.title = barChartTitles[barChartConfig.state];
                             barChartConfig.date = dates[barChartConfig.state];
+                            barChartConfig.avg = 48.79;
                             barChart(stateDataURL, barChartConfig);
                             viz.on("click", function() {
                                 // Render line chart with third annotation
@@ -609,11 +649,14 @@
                                     clearCanvas();
                                     barChartConfig.state++;
                                     barChartConfig.title = barChartTitles[barChartConfig.state];
+                                    barChartConfig.date = dates[barChartConfig.state];
+                                    barChartConfig.avg = 243.15;
                                     barChart(stateDataURL, barChartConfig);
                                     viz.on("click", function() {
                                         // Render unguided line chart
                                         clearCanvas();
                                         lineChartConfig.isGuided = false;
+                                        barChartConfig.avg = null;
                                         lineChart(usDataURL, lineChartConfig);
                                         viz.on("click", function(){}); // let charts handle it
                                     });
